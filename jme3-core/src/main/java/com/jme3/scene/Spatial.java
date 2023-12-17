@@ -369,7 +369,7 @@ public abstract class Spatial implements Savable, Cloneable, Collidable,
      * This method is used by {@link RenderManager} as it is more efficient in its case.
      * Generally, {@link #checkCulling(com.jme3.renderer.Camera)} should be used instead.
      * 
-     * @param cam the camera to check againstcm@param hint 
+     * @param cam the camera to check against
      * @param hint the cull hint that should be used
      * @param parentCulled true if this spatial's parent was culled
      * @return true if inside or intersecting camera frustum
