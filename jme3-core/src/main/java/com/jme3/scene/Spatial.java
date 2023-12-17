@@ -360,6 +360,17 @@ public abstract class Spatial implements Savable, Cloneable, Collidable,
      * (should be rendered), false if outside.
      */
     public boolean checkCulling(Camera cam) {
+        return checkCulling(cam, false);
+    }
+    
+    /**
+     * Checks if this spatial should be culled.
+     * 
+     * @param cam
+     * @param parentCulled
+     * @return 
+     */
+    public boolean checkCulling(Camera cam, boolean parentCulled) {
         if (refreshFlags != 0) {
             throw new IllegalStateException("Scene graph is not properly updated for rendering.\n"
                     + "State was changed after rootNode.updateGeometricState() call. \n"
@@ -375,6 +386,10 @@ public abstract class Spatial implements Savable, Cloneable, Collidable,
         } else if (cm == Spatial.CullHint.Never) {
             setLastFrustumIntersection(Camera.FrustumIntersect.Intersects);
             return true;
+        }
+        
+        if (parentCulled) {
+            return false;
         }
 
         // check to see if we can cull this node

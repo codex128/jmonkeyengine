@@ -797,13 +797,16 @@ public class RenderManager {
      * @param vp the ViewPort to render in (not null)
      */
     private void renderSubScene(Spatial scene, ViewPort vp) {
-
+        
+        boolean cull = !scene.checkCulling(vp.getCamera());
+        
         // check culling first.
-        if (!scene.checkCulling(vp.getCamera())) {
-            return;
+        if (cull) {
+            System.out.println("culled scene: "+scene.getName());
+            //return;
         }
-
-        scene.runControlRender(this, vp);
+        
+        if (!cull) scene.runControlRender(this, vp);
         if (scene instanceof Node) {
             // Recurse for all children
             Node n = (Node) scene;
@@ -815,7 +818,7 @@ public class RenderManager {
                 vp.getCamera().setPlaneState(camState);
                 renderSubScene(children.get(i), vp);
             }
-        } else if (scene instanceof Geometry) {
+        } else if (!cull && scene instanceof Geometry) {
             // add to the render queue
             Geometry gm = (Geometry) scene;
             if (gm.getMaterial() == null) {
