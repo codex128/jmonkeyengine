@@ -360,37 +360,39 @@ public abstract class Spatial implements Savable, Cloneable, Collidable,
      * (should be rendered), false if outside.
      */
     public boolean checkCulling(Camera cam) {
-        return checkCulling(cam, false);
+        return checkCulling(cam, getCullHint(), false);
     }
     
     /**
      * Checks if this spatial should be culled.
+     * <p>
+     * This method is used by {@link RenderManager} as it is more efficient in its case.
+     * Generally, {@link #checkCulling(com.jme3.renderer.Camera)} should be used instead.
      * 
-     * @param cam
-     * @param parentCulled
-     * @return 
+     * @param cam the camera to check againstcm@param hint 
+     * @param hint the cull hint that should be used
+     * @param parentCulled true if this spatial's parent was culled
+     * @return true if inside or intersecting camera frustum
+     * (should be rendered), false if outside.
      */
-    public boolean checkCulling(Camera cam, boolean parentCulled) {
+    public boolean checkCulling(Camera cam, CullHint hint, boolean parentCulled) {
         if (refreshFlags != 0) {
             throw new IllegalStateException("Scene graph is not properly updated for rendering.\n"
                     + "State was changed after rootNode.updateGeometricState() call. \n"
                     + "Make sure you do not modify the scene from another thread!\n"
                     + "Problem spatial name: " + getName());
         }
-
-        CullHint cm = getCullHint();
-        assert cm != CullHint.Inherit : "CullHint should never be inherit. Problem spatial name: " + getName();
-        if (cm == Spatial.CullHint.Always) {
-            setLastFrustumIntersection(Camera.FrustumIntersect.Outside);
-            return false;
-        } else if (cm == Spatial.CullHint.Never) {
+        
+        assert hint != CullHint.Inherit : "CullHint should never be inherit. Problem spatial name: " + getName();
+        
+        if (hint == Spatial.CullHint.Never) {
             setLastFrustumIntersection(Camera.FrustumIntersect.Intersects);
             return true;
         }
-        
-        if (parentCulled) {
+        else if (parentCulled || hint == Spatial.CullHint.Always) {
+            setLastFrustumIntersection(Camera.FrustumIntersect.Outside);
             return false;
-        }
+        } 
 
         // check to see if we can cull this node
         frustrumIntersects = (parent != null ? parent.frustrumIntersects

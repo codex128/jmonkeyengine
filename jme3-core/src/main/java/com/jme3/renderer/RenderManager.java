@@ -787,7 +787,7 @@ public class RenderManager {
         //(must be 0 for the first note of the scene to be rendered)
         vp.getCamera().setPlaneState(0);
         //rendering the scene
-        renderSubScene(scene, vp);
+        renderSubScene(scene, vp, scene.getCullHint(), false);
     }
 
     /**
@@ -795,28 +795,28 @@ public class RenderManager {
      *
      * @param scene the scene to be rendered (not null)
      * @param vp the ViewPort to render in (not null)
+     * @param hint the cull hint belonging to the scene
+     * @param parentCulled true if the scene's parent was culled
      */
-    private void renderSubScene(Spatial scene, ViewPort vp) {
-        
-        boolean cull = !scene.checkCulling(vp.getCamera());
-        
-        // check culling first.
-        if (cull) {
-            System.out.println("culled scene: "+scene.getName());
-            //return;
+    private void renderSubScene(Spatial scene, ViewPort vp, Spatial.CullHint hint, boolean parentCulled) {        
+        boolean cull = !scene.checkCulling(vp.getCamera(), hint, parentCulled);        
+        if (cull && hint == Spatial.CullHint.Always) {
+            // For CullHint.Always, all children are culled.
+            // We won't even check them.
+            return;
         }
-        
-        if (!cull) scene.runControlRender(this, vp);
+        if (!cull) {
+            scene.runControlRender(this, vp);
+        }        
         if (scene instanceof Node) {
             // Recurse for all children
-            Node n = (Node) scene;
-            List<Spatial> children = n.getChildren();
+            Node n = (Node)scene;
             // Saving cam state for culling
             int camState = vp.getCamera().getPlaneState();
-            for (int i = 0; i < children.size(); i++) {
+            for (Spatial s : n.getChildren()) {
                 // Restoring cam state before proceeding children recursively
                 vp.getCamera().setPlaneState(camState);
-                renderSubScene(children.get(i), vp);
+                renderSubScene(s, vp, getNextCullHint(s, hint), cull);
             }
         } else if (!cull && scene instanceof Geometry) {
             // add to the render queue
@@ -824,9 +824,25 @@ public class RenderManager {
             if (gm.getMaterial() == null) {
                 throw new IllegalStateException("No material is set for Geometry: " + gm.getName());
             }
-
             vp.getQueue().addToQueue(gm, scene.getQueueBucket());
         }
+    }
+    
+    /**
+     * Gets the current cull hint for the spatial.
+     * <p>
+     * If the spatial's hint is {@code CullHint.Inherit}, then the parent hint is returned.
+     * Otherwise the spatial's local cull hint is returned.
+     * 
+     * @param spatial
+     * @param parentHint
+     * @return 
+     */
+    private Spatial.CullHint getNextCullHint(Spatial spatial, Spatial.CullHint parentHint) {
+        if (spatial.getLocalCullHint() == Spatial.CullHint.Inherit) {
+            return parentHint;
+        }
+        return spatial.getLocalCullHint();
     }
 
     /**
