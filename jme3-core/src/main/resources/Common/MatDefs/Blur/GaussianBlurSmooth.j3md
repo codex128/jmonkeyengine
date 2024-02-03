@@ -1,0 +1,26 @@
+MaterialDef HGaussianBlur {
+
+    MaterialParameters {
+        Int BoundDrawBuffer
+        Int SampleRadius : 5
+        Int NumSamples
+        Texture2D Texture
+        Float Size
+        Float Scale
+        Boolean Horizontal
+        Float FalloffPower : 0.2
+    }
+
+    Technique {
+        VertexShader GLSL300 GLSL150 GLSL100:   Common/MatDefs/Post/Post.vert
+        FragmentShader GLSL300 GLSL150 GLSL100: Common/MatDefs/Blur/GaussianBlurSmooth.frag
+
+        WorldParameters {
+        }
+        
+        Defines {
+            HORIZONTAL : Horizontal
+            BOUND_DRAW_BUFFER: BoundDrawBuffer
+        }
+    }
+}
